@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.png
+real_all_smooth.csv
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.out

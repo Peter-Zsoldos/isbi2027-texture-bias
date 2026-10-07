@@ -1,0 +1,129 @@
+\documentclass{article}
+\usepackage{spconf,amsmath,amssymb,graphicx,booktabs,xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{nosep, leftmargin=12pt}
+\setlength{\emergencystretch}{1.5em}
+
+\title{Small regions look homogeneous: finite-sample bias of radiomic texture features and a model-free block-jackknife correction}
+\name{Anonymous Author(s)}
+\address{Affiliation}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Radiomic texture features such as entropy or GLCM statistics are computed by plugging the histogram of a region of interest (ROI) into a nonlinear formula. For small ROIs these plug-in estimates are biased, so heterogeneity features partly measure lesion size. We show that the bias scales as $c/N$ with a constant that depends on the unknown spatial correlation of the image, which defeats classical corrections, and that a delete-a-block jackknife over ROI octants removes it without knowing the correlation, wrapping any feature extractor unchanged. An ROI-specific criterion, $N/\xi^3\ge20$ with $\xi$ the correlation length, decides when the correction is valid, and we identify a second, independent size artefact: PyRadiomics anchors grey levels at the ROI minimum. On synthetic textures and 2{,}387 real CT ROIs with an internal reference in four correlation regimes, the jackknife removes the bias of GLCM joint entropy at 123 voxels ($-0.63\to-0.01$ bits) and halves its error; gated by the criterion, it is never more than 6\% worse than the plug-in estimate, and across 93 PyRadiomics features it never increases the error of smooth histogram/GLCM features by more than 10\%.
+\end{abstract}
+
+\begin{keywords}
+Radiomics, texture analysis, bias correction, jackknife, reproducibility
+\end{keywords}
+
+\section{Introduction}
+\label{sec:intro}
+Radiomics quantifies lesion heterogeneity with texture features computed inside a segmented ROI: first-order entropy and uniformity of the grey-level histogram, and grey-level co-occurrence (GLCM) statistics~\cite{haralick1973}, standardized by IBSI~\cite{zwanenburg2020} and implemented in PyRadiomics~\cite{vangriethuysen2017}. Each feature is a nonlinear function of probabilities estimated from the ROI's own voxels. When the ROI is small these \emph{plug-in} estimates are biased---the entropy of an under-sampled histogram is too low---so small lesions look homogeneous for purely statistical reasons. Radiomic features are notoriously confounded with volume~\cite{welch2019}; Brooks and Grigsby~\cite{brooks2014} attributed this to under-sampling and proposed to exclude lesions below a fixed volume, and Shafiq-ul-Hassan et al.~\cite{shafiq2017} proposed empirical normalizations. No correction exists, and a fixed volume threshold ignores that the information content of an ROI depends on the spatial correlation of the image. Classical entropy corrections~\cite{miller1955,paninski2003} assume independent samples, which neighbouring voxels are not.
+
+\noindent\textbf{Contributions.} (i) A bias analysis showing that the plug-in bias of smooth texture features is $c/N$ with $c$ proportional to the unknown spatial correlation of the image. (ii) A model-free correction: a delete-a-block jackknife over ROI octants, which cancels $c/N$ without estimating $c$ and wraps any extractor, with an ROI-specific reliability criterion. Block resampling for dependent data is classical~\cite{kunsch1989}; what is new is recognizing finite-ROI radiomic bias as this type of problem, turning it into a drop-in wrapper, and replacing fixed volume thresholds by a criterion that adapts to each ROI's correlation length. (iii) A second size artefact in PyRadiomics' discretization and its fix. (iv) An evaluation on synthetic textures, 120 real CT regions with an internal reference, all 93 non-shape PyRadiomics features, and 66 lung tumours, with a taxonomy of which features can and cannot be corrected.
+
+\section{Theory and method}
+\label{sec:method}
+\noindent\textbf{Plug-in bias under spatial correlation.} Let the image inside an ROI $S$ of $N$ voxels be a stationary random field, and let a texture feature be $\theta=F(\pi)$, a smooth function of a probability vector $\pi$: the grey-level distribution (first order) or the distribution of grey-level pairs at a given offset (GLCM). The plug-in estimate is $\hat\theta_S=F(\hat\pi_S)$, with $\hat\pi_S$ the empirical frequencies in $S$. A second-order expansion gives
+\begin{equation}
+\mathbb{E}\,\hat\theta_S-\theta\approx\tfrac12\operatorname{tr}\!\big(\nabla^2F(\pi)\,\operatorname{Cov}(\hat\pi_S)\big).
+\label{eq:bias}
+\end{equation}
+For independent voxels $\operatorname{Cov}(\hat\pi_S)=(\operatorname{diag}\pi-\pi\pi^\top)/N$, which for entropy yields the Miller--Madow bias $-(K-1)/(2N\ln2)$ bits for $K$ occupied bins~\cite{miller1955}. For a correlated field, $\operatorname{Cov}(\hat\pi_S)\approx\Sigma_\infty/N$, where the long-run covariance $\Sigma_\infty=\sum_{h}\operatorname{Cov}(e_{X_0},e_{X_h})$ sums the auto-covariances of the bin indicators over all lags $h$. The bias is therefore still $c/N$, but $c$ is inflated by a ``design effect'' roughly equal to the correlation volume $\xi^3$, where $\xi$ is the correlation length. It is unknown and image-dependent, so Miller--Madow-type corrections under-correct.
+
+\noindent\textbf{Block jackknife.} Split $S$ into $B$ contiguous blocks $S_b$ (we use $B=8$ octants at equal voxel quantiles along each axis) and recompute the feature on $S\setminus S_b$. If $\mathbb{E}\hat\theta_{S'}=\theta+c/|S'|+o(1/|S'|)$ for every contiguous region $S'$ much larger than $\xi$, the delete-a-group jackknife for unequal groups~\cite{busing1999},
+\begin{equation}
+\hat\theta_{\text{JK}}=B\,\hat\theta_S-\textstyle\sum_{b}\big(1-\tfrac{n_b}{N}\big)\hat\theta_{S\setminus S_b},\qquad n_b=|S_b|,
+\label{eq:jk}
+\end{equation}
+cancels the $c/N$ term for any $c$, because deleting a contiguous block reduces the effective sample size in proportion to its voxel count. This is the block-resampling principle for dependent data~\cite{kunsch1989,lahiri2003}, here applied to finite ROIs. Eq.~\eqref{eq:jk} needs only $B+1=9$ calls of an unmodified extractor and no parameter.
+
+\noindent\textbf{Reliability criterion.} The expansion requires $\operatorname{Cov}(\hat\pi_S)\propto1/N$, i.e.\ an ROI spanning several correlation lengths. When it does not, the ROI samples only part of the texture's variability, the bias is $O(1)$ rather than $O(1/N)$, and no estimator based on the ROI alone can recover $\theta$. We estimate $\xi$ inside the ROI as the lag at which the intensity autocorrelation falls to $1/e$ (averaged over the three axes) and use the effective sample size $N/\xi^3$ as a per-ROI reliability index. Our \emph{gated} estimator returns $\hat\theta_{\text{JK}}$ if $N/\xi^3\ge20$ (threshold from the synthetic study, Sec.~\ref{sec:results}) and otherwise the plug-in value together with an ``unreliable'' flag, since outside the $1/N$ regime the jackknife can add variance without removing bias.
+
+\noindent\textbf{Bin anchoring.} With a fixed bin width $w$, PyRadiomics assigns grey level $\lfloor x/w\rfloor-\lfloor x_{\min}/w\rfloor+1$, i.e.\ it numbers bins from the ROI minimum $x_{\min}$. Features that use grey-level \emph{values} (GLCM joint/sum average, autocorrelation) then inherit the size dependence of an extreme-value statistic, which shrinks only logarithmically with $N$ and cannot be removed by Eq.~\eqref{eq:jk}. Using absolute bin indices $\lfloor x/w\rfloor$, i.e.\ a fixed anchor, removes it.
+
+\noindent\textbf{Scope.} Eq.~\eqref{eq:bias} applies to smooth functionals of histograms and co-occurrences (first-order moments and entropies, GLCM). It does not apply to non-smooth statistics (percentiles, range), for which the jackknife is known to fail; to extensive features (energy, total energy), which scale with $N$ by definition; or to run-, zone- and neighbourhood-based features (GLRLM, GLSZM, GLDM, NGTDM), whose runs and zones are truncated by the ROI boundary, so that part of their size dependence is definitional.
+
+\section{Experiments}
+\label{sec:exp}
+\noindent\textbf{Synthetic textures.} Gaussian random fields on $128^3$ grids (Gaussian kernels $\sigma=0.75,1.5,3$ voxels, i.e.\ $\xi=2\sigma$), scaled to CT-like intensities (s.d.\ 60, bin width 25), 10 realizations each. Spherical ROIs of radius 3--14 voxels (123--11{,}513 voxels) are compared with the population value, taken from a radius-60 sphere. We use a NumPy re-implementation of the PyRadiomics first-order and GLCM features, verified to match PyRadiomics~3.0.1 to five decimals.
+
+\noindent\textbf{Real CT regions with an internal reference.} In the 63 CTs of the Medical Segmentation Decathlon lung task~\cite{antonelli2022} we place up to three spheres of radius 14 voxels (about 11{,}500 voxels) entirely inside soft tissue (HU in $[-50,150]$), giving 120 regions from 46 scans. Each large sphere is the reference; ROIs of radius 3--8 voxels are sampled inside it (1{,}045 ROIs). The texture is real CT texture and noise ($\xi$ median 0.86 voxels). To cover the regimes of softer reconstruction kernels, we repeat the experiment after Gaussian smoothing of the scans ($\sigma=0.7,1.4,2$ voxels; 24, 24, 12 scans; median $\xi=1.6, 3.6, 6.4$; 524, 499, 319 ROIs).
+
+\noindent\textbf{All PyRadiomics features.} On 96 ROIs (radius 4 and 6, from 29 scans) we wrap the full PyRadiomics extractor---all 93 first-order, GLCM, GLRLM, GLSZM, GLDM and NGTDM features---in Eq.~\eqref{eq:jk} without modification, and report bias and root-mean-square error (RMSE) in units of the between-region standard deviation of the reference.
+
+\noindent\textbf{Lung tumours.} For the 66 tumour components (68--338{,}472 voxels, median 6{,}866) we compute all features with and without correction and their Spearman correlation $\rho$ with tumour volume.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_main.pdf}
+\caption{(a) Bias of GLCM joint entropy on synthetic textures vs.\ effective sample size $N/\xi^3$ (markers: $\xi=1.5,3,6$; dotted: criterion $N/\xi^3=20$). (b) Same on real CT soft tissue with an internal reference in four correlation regimes (markers: $\xi=0.9,1.6,3.6,6.4$; mean, 95\% CI). (c) Absolute bias of 93 PyRadiomics features without (x) and with (y) the block jackknife at radius 4, by feature type; points below the diagonal are improved. (d) Bias of the mean grey-level index with PyRadiomics' ROI-minimum anchoring and with a fixed anchor.}
+\label{fig:main}
+\end{figure*}
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Real CT soft tissue in four correlation regimes (median $\xi$): bias and RMSE w.r.t.\ the internal reference over all radii (3--8 voxels), plug-in / block jackknife / gated jackknife ($N/\xi^3\ge20$; share of ROIs where applied).}
+\label{tab:real}
+\setlength{\tabcolsep}{1.6pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+feature, $\xi$ & applied & bias & RMSE\\
+\midrule
+JointEntropy, 0.9 & 99\% & $-0.27/+0.00/-0.00$ & $0.40/0.23/0.23$\\
+\phantom{JointEntropy,} 1.6 & 90\% & $-0.15/-0.07/-0.08$ & $0.31/0.30/0.31$\\
+\phantom{JointEntropy,} 3.6 & 29\% & $-0.24/-0.21/-0.24$ & $0.50/0.50/0.50$\\
+\phantom{JointEntropy,} 6.4 & 6\% & $-0.14/-0.11/-0.14$ & $0.47/0.49/0.47$\\
+Entropy, 0.9 & 99\% & $-0.05/-0.02/-0.02$ & $0.12/0.11/0.11$\\
+\phantom{Entropy,} 1.6 & 90\% & $-0.08/-0.05/-0.06$ & $0.17/0.16/0.16$\\
+Correlation, 0.9 & 99\% & $-0.02/-0.01/-0.01$ & $0.06/0.05/0.06$\\
+\phantom{Correlation,} 1.6 & 90\% & $-0.06/-0.04/-0.04$ & $0.10/0.10/0.10$\\
+\phantom{Correlation,} 3.6 & 29\% & $-0.05/-0.12/-0.06$ & $0.36/0.52/0.38$\\
+Contrast (unbiased), 0.9 & 99\% & $-0.01/-0.00/-0.00$ & $1.44/1.52/1.52$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{93 PyRadiomics features at radius 4 and 6: median $|$bias$|$ in reference-s.d.\ units (plug-in $\to$ jackknife), and number of features whose RMSE decreases ($\downarrow$) or increases by ${>}10\%$ ($\uparrow$), radius 4/6.}
+\label{tab:types}
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+type & $n$ & $|$bias$|$, $r{=}4$ & $|$bias$|$, $r{=}6$ & $\downarrow$ & $\uparrow$\\
+\midrule
+smooth (1st ord., GLCM) & 34 & $0.15\to0.06$ & $0.08\to0.04$ & 22/22 & 0/0\\
+quantiles & 8 & $0.05\to0.09$ & $0.05\to0.04$ & 4/3 & 3/3\\
+geometry (run, zone) & 51 & $0.63\to0.48$ & $0.57\to0.38$ & 35/28 & 12/19\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Results}
+\label{sec:results}
+\noindent\textbf{Synthetic textures (Fig.~\ref{fig:main}a).} Plug-in joint entropy is biased by up to $-2.1$ bits and still by $-0.02$ to $-0.14$ bits at $11{,}500$ voxels. The plug-in bias does not depend on $N/\xi^3$ alone, since sparse co-occurrence matrices add a term in the raw $N$. After correction, however, the residual collapses onto one curve: it stays within $\pm0.1$ bits whenever $N/\xi^3\ge20$, for every correlation length. The correction raised the RMSE by more than $0.02$ only for contrast, which is unbiased (up to $+0.13$ at radius 3). Below $N/\xi^3\approx5$ all estimators remain strongly biased, as predicted.
+
+\noindent\textbf{Real CT (Fig.~\ref{fig:main}b, Table~\ref{tab:real}).} In native-resolution soft tissue, a 123-voxel ROI underestimates joint entropy by $0.63$ bits; the jackknife removes this bias ($-0.01\pm0.05$, 95\% CI) and halves the RMSE, and over all radii it removes the joint-entropy bias completely ($-0.27\to0.00$). With smoother texture the picture follows the criterion: at $\xi=1.6$ the jackknife removes about half of the bias; at $\xi=3.6$ and $6.4$, where most ROIs have $N/\xi^3<20$, it removes little and can even hurt (correlation: RMSE $0.36\to0.52$). The gated estimator keeps the gains and avoids the losses: across 7 features and 4 regimes its RMSE is never more than 6\% above the plug-in value (the two worst cases being contrast, which is unbiased, and correlation at $\xi=3.6$). Part of the residual at $\xi\ge1.6$ is not sampling error at all: the plug-in bias also persists at large $N/\xi^3$, because smoothing makes larger-scale anatomy dominate, so that small sub-regions differ from the reference genuinely, i.e.\ the texture is not stationary at that scale.
+
+\noindent\textbf{All PyRadiomics features (Fig.~\ref{fig:main}c, Table~\ref{tab:types}).} 62 of 93 features are biased by more than $0.2$ reference s.d.\ at radius 4. For smooth first-order and GLCM features the jackknife reduces the median bias from $0.15$ to $0.06$ s.d., lowers the RMSE for 22 of 34 and never raises it by more than 10\%; e.g.\ GLCM MCC $+1.79\to-0.03$ s.d., joint entropy $-0.23\to-0.01$. The remaining large biases of this group come from definitions, not sampling: energy and total energy are extensive, and joint average, sum average and autocorrelation inherit the ROI-minimum anchoring, which shifts the mean grey-level index by $-5.5$ levels at radius 3 and still $-1.7$ at radius 14, whereas a fixed anchor is unbiased (Fig.~\ref{fig:main}d). Quantile features behave as jackknife theory predicts (no gain), and region-geometry features are only partly corrected.
+
+\noindent\textbf{Lung tumours.} Most tumours are large, so the correction changes most features little, and correlations with volume that are presumably biological (mean intensity, skewness) are unaffected. Where the bias is large, it removes the size dependence: the correlation of GLCM Imc1 with volume drops from $\rho=0.65$ to $0.01$, of joint entropy from $0.13$ to $-0.02$, and the number of region-geometry features with $|\rho|>0.3$ from 35 to 22.
+
+\section{Discussion}
+\label{sec:disc}
+Plug-in texture features of small ROIs are biased estimators, and the bias depends on the image's spatial correlation, so neither a fixed volume threshold~\cite{brooks2014} nor an independent-sample correction is adequate. The block jackknife is a wrapper around any extractor that removes the $c/N$ bias of smooth features without tuning, and $N/\xi^3$ tells, per ROI, when no correction can work; the criterion is necessary rather than sufficient, since non-stationary texture also separates small ROIs from large ones. We recommend (1) the gated jackknife for first-order and GLCM entropy/energy-type features, not for linear or quantile features; (2) fixed-anchor discretization; (3) reporting $N/\xi^3$ and treating ROIs below 20 as unreliable. Limitations: the bias analysis assumes stationarity within the ROI; real tumours are heterogeneous, so their size--feature relations mix bias and biology; and run- and zone-based features need definitional, not statistical, fixes. Code: \url{https://github.com/Hannibal0319/isbi2027-texture-bias}.
+
+\section{Compliance with ethical standards}
+Only public, anonymized datasets were used; no ethical approval was required.
+
+\section{Acknowledgments}
+No funding or conflicts of interest. Claude (Anthropic, an AI assistant) helped write code and text; the authors verified all results.
+
+\bibliographystyle{IEEEbib}
+\bibliography{refs}
+\end{document}
