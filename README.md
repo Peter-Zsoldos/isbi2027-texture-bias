@@ -6,6 +6,15 @@ Paper source: `paper/main.tex` (build with `latexmk -pdf main.tex`). Data: MSD T
 `corrections.py` — `evaluate(f, img, mask, k=2)` wraps **any** feature function `f(img, mask) -> dict` (for example the full PyRadiomics extractor). It returns the plug-in value and the delete-a-block jackknife over k^3 contiguous blocks (k=2: octants; unequal-block formula of Busing et al. 1999). It optionally also returns the split-half estimate.
 `texfeat.py` — a fast NumPy re-implementation of the PyRadiomics first-order Entropy/Uniformity and GLCM JointEntropy, JointEnergy, Contrast, Idm and Correlation features (`validate.py` checks a 5-decimal match with PyRadiomics 3.0.1).
 
+## Drop-in use (`radjk.py`)
+```python
+from radiomics import featureextractor
+from radjk import extract_corrected
+ext = featureextractor.RadiomicsFeatureExtractor(params)   # your usual configuration
+feats = extract_corrected(ext, image, mask)                # adds jk_* corrected features, jk_xi, jk_neff, jk_reliable
+```
+About 1 s per tumour on RIDER (`rider/bench_radjk.py`).
+
 ## Reproduce
 | result | command (Python 3.9 venv with pyradiomics for scripts that import it) |
 |---|---|
