@@ -1,69 +1,75 @@
 """Paper 2 result figures (at most two panels per row):
-fig_bias.pdf  (full width) (a) synthetic and (b) real-CT JointEntropy bias vs effective sample size;
+fig_bias.pdf  (full width, 2x2) rows: synthetic / real CT; columns: plug-in / block jackknife;
+              JointEntropy bias vs effective sample size N/xi^3, one curve per correlation regime
+              (lightness and marker = correlation length; blue = plug-in, red = jackknife);
 fig_pyrad.pdf (column)     all 93 PyRadiomics features, |bias| plug-in vs jackknife."""
 import numpy as np, pandas as pd, matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
 
 plt.rcParams.update({'font.size': 7.5, 'font.family': 'serif', 'axes.linewidth': 0.6, 'xtick.major.width': 0.6,
                      'ytick.major.width': 0.6, 'xtick.major.size': 2.5, 'ytick.major.size': 2.5,
-                     'axes.spines.top': False, 'axes.spines.right': False, 'pdf.fonttype': 42, 'legend.fontsize': 6.8,
+                     'axes.spines.top': False, 'axes.spines.right': False, 'pdf.fonttype': 42, 'legend.fontsize': 6.6,
                      'axes.titlesize': 7.8, 'axes.titleweight': 'bold'})
-BLUE, RED, GREY, VIOLET, SHADE = '#2a78d6', '#e34948', '#7a7974', '#6250d6', '#efeee9'
+GREY, VIOLET, SHADE = '#7a7974', '#6250d6', '#efeee9'
 AQUA, DYEL = '#199e70', '#c98500'   # feature types: hues not used for methods
-METH = [('plugin', BLUE, 'plug-in (PyRadiomics)'), ('JK', RED, 'block jackknife (ours)')]
+# light -> dark = short -> long correlation length; blue ramp for plug-in, red ramp for the jackknife
+RAMP = {'plugin': ['#86b6ef', '#3987e5', '#1c5cab', '#0d366b'], 'JK': ['#f0a09f', '#e34948', '#a8282a', '#6b1617']}
+MK = ['o', 's', '^', 'D']
 
 
-def regime_axes(a, title):
-    a.axvspan(1e-1, 20, color=SHADE, zorder=0, lw=0)
-    a.axvline(20, color=GREY, lw=0.7, ls=':')
-    a.axhline(0, color='#aaa', lw=0.6, zorder=1)
-    a.set_xscale('log'); a.set_xlim(0.3, 8e3); a.set_xlabel(r'effective sample size $N/\xi^3$')
-    a.set_ylabel('JointEntropy bias (bits)'); a.set_title(title, loc='left')
+def panel(ax, curves, meth, xis, title, ylim, ci=False):
+    ax.axvspan(1e-1, 20, color=SHADE, zorder=0, lw=0)
+    ax.axvline(20, color=GREY, lw=0.7, ls=':')
+    ax.axhline(0, color='#999', lw=0.7, zorder=1)
+    hs = []
+    for (n, e, se), xi, col, mk in zip(curves, xis, RAMP[meth][-len(xis):] if len(xis) < 4 else RAMP[meth], MK):
+        if ci:
+            ax.errorbar(n, e, yerr=1.96 * se, color=col, lw=1.2, marker=mk, ms=3.6, elinewidth=0.6, capsize=0)
+        else:
+            ax.plot(n, e, color=col, lw=1.2, marker=mk, ms=3.6)
+        hs.append(Line2D([], [], color=col, lw=1.2, marker=mk, ms=3.6, label=xi))
+    ax.set_xscale('log'); ax.set_xlim(0.3, 8e3); ax.set_ylim(*ylim)
+    ax.text(0.35, ylim[1] - 0.04 * (ylim[1] - ylim[0]), r'flagged: $N/\xi^3<20$', fontsize=6.3, color='#666', va='top')
+    ax.legend(handles=hs, loc='lower right', ncol=len(xis), frameon=False, handlelength=1.5, handletextpad=0.3,
+              columnspacing=0.9, borderaxespad=0.2, title=r'correlation length $\xi$ (voxels)', title_fontsize=6.6)
+    ax.set_title(title, loc='left')
 
 
-def regime_legend(a, xis, mks):
-    h = [Line2D([], [], color='#444', marker=m, ls='', ms=4, label=x) for x, m in zip(xis, mks)]
-    a.legend(handles=h, loc='lower right', frameon=False, ncol=len(xis), handletextpad=0.1, columnspacing=1.0,
-             borderaxespad=0.2, title=r'correlation length $\xi$ (voxels)', title_fontsize=6.8)
-
-
-fig, (a, b) = plt.subplots(1, 2, figsize=(7.1, 2.1), gridspec_kw=dict(wspace=0.22))
-# (a) synthetic textures
+# data: synthetic (3 regimes) and real CT (4 regimes), one curve per regime and method
 df = pd.read_csv('bench_full.csv'); df['xi'] = 2 * df.sigma
 df['neff'] = (4 / 3 * np.pi * df.r ** 3) / df.xi ** 3
-MK = ['o', 's', '^']
-for sig, mk in zip([0.75, 1.5, 3.0], MK):
-    for meth, c, _ in METH:
-        d = df[(df.feature == 'JointEntropy') & (df.sigma == sig) & (df.method == meth)]
+syn = {m: [] for m in RAMP}
+for sig in [0.75, 1.5, 3.0]:
+    for m in RAMP:
+        d = df[(df.feature == 'JointEntropy') & (df.sigma == sig) & (df.method == m)]
         g = d.groupby('r').agg(e=('err', 'mean'), n=('neff', 'first')).sort_values('n')
-        a.plot(g.n, g.e, marker=mk, ms=3.5, lw=1.1, color=c, mfc='white' if meth == 'plugin' else c, mew=0.9)
-regime_axes(a, '(a) synthetic texture'); a.set_ylim(-2.3, 0.3)
-regime_legend(a, ['1.5', '3', '6'], MK)
-
-# (b) real CT soft tissue, internal reference, four correlation regimes
-R = pd.read_csv('real_all_smooth.csv'); MK = ['o', 's', '^', 'D']
-for s, mk in zip([0.0, 0.7, 1.4, 2.0], MK):
-    for meth, c, _ in METH:
-        d = R[(R.feature == 'JointEntropy') & (R.method == meth) & (R.smooth == s)]
+        syn[m].append((g.n, g.e, None))
+R = pd.read_csv('real_all_smooth.csv')
+ct = {m: [] for m in RAMP}
+for s in [0.0, 0.7, 1.4, 2.0]:
+    for m in RAMP:
+        d = R[(R.feature == 'JointEntropy') & (R.method == m) & (R.smooth == s)]
         g = d.groupby('r').agg(e=('err', 'mean'), n=('neff', 'median'), se=('err', 'sem')).sort_values('n')
-        b.errorbar(g.n, g.e, yerr=1.96 * g.se, marker=mk, ms=3.5, lw=1.1, color=c, mfc='white' if meth == 'plugin' else c,
-                   mew=0.9, elinewidth=0.5, capsize=0)
-regime_axes(b, '(b) real CT soft tissue (mean, 95% CI)'); b.set_ylim(-1.15, 0.12)
-regime_legend(b, ['0.9', '1.6', '3.6', '6.4'], MK)
+        ct[m].append((g.n, g.e, g.se))
 
-H = [Line2D([], [], color=c, lw=1.2, marker='o', ms=3.5, mfc='white' if m == 'plugin' else c, mew=0.9, label=l)
-     for m, c, l in METH]
-H.append(Patch(color=SHADE, label=r'$N/\xi^3<20$: ROI flagged unreliable'))
-fig.legend(handles=H, loc='lower center', bbox_to_anchor=(0.5, 0.97), ncol=3, frameon=False, handlelength=1.8,
-           columnspacing=2.0)
+fig, ax = plt.subplots(2, 2, figsize=(7.1, 2.95), sharey='row', gridspec_kw=dict(wspace=0.08, hspace=0.62))
+panel(ax[0, 0], syn['plugin'], 'plugin', ['1.5', '3', '6'], '(a) synthetic texture: plug-in (PyRadiomics)', (-2.3, 0.35))
+panel(ax[0, 1], syn['JK'], 'JK', ['1.5', '3', '6'], '(b) synthetic texture: block jackknife (ours)', (-2.3, 0.35))
+panel(ax[1, 0], ct['plugin'], 'plugin', ['0.9', '1.6', '3.6', '6.4'],
+      '(c) real CT soft tissue: plug-in (PyRadiomics)', (-1.15, 0.2), ci=True)
+panel(ax[1, 1], ct['JK'], 'JK', ['0.9', '1.6', '3.6', '6.4'],
+      '(d) real CT soft tissue: block jackknife (ours)', (-1.15, 0.2), ci=True)
+for a in ax[:, 0]:
+    a.set_ylabel('JointEntropy bias (bits)')
+for a in ax[1]:
+    a.set_xlabel(r'effective sample size $N/\xi^3$')
 fig.savefig('paper/figures/fig_bias.pdf', bbox_inches='tight'); fig.savefig('fig_bias.png', dpi=220, bbox_inches='tight')
 
 # all PyRadiomics features: |bias| plug-in vs JK (reference-SD units), r=4
 T = pd.read_csv('pyrad_summary.csv'); t = T[T.r == 4]
-fig, c = plt.subplots(figsize=(3.3, 2.35))
+fig, c = plt.subplots(figsize=(3.3, 2.1))
 for ty, col, mk, lab in [('A', AQUA, 'o', 'histogram / GLCM (smooth)'), ('B', DYEL, 's', 'quantile-based'),
                          ('C', VIOLET, '^', 'run / zone (region geometry)')]:
     s = t[t.type.str.startswith(ty)]
