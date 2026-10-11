@@ -63,7 +63,7 @@ cancels the $c/N$ term for any $c$, because deleting a contiguous block reduces 
 
 \noindent\textbf{Real CT regions with an internal reference.} In the 63 CTs of the Medical Segmentation Decathlon lung task~\cite{antonelli2022} we place up to three spheres of radius 14 voxels (about 11{,}500 voxels) entirely inside soft tissue (HU in $[-50,150]$), giving 120 regions from 46 scans. Each large sphere is the reference; ROIs of radius 3--8 voxels are sampled inside it (1{,}045 ROIs). (CT texture and noise, median $\xi$ 0.86 voxels.) To cover smoother textures we repeat the experiment after Gaussian smoothing of the scans ($\sigma=0.7,1.4,2$ voxels; median $\xi=1.6, 3.6, 6.4$; 524, 499, 319 ROIs) and, with real reconstructions, on RIDER Lung CT~\cite{zhao2024rider}, where 32 patients were scanned twice on the same day and each scan was reconstructed with a sharp and a smooth kernel at 1.25, 2.5 and 5\,mm (251 series with uniform slice spacing, 640 regions, 4{,}173 ROIs).
 
-\noindent\textbf{All PyRadiomics features.} On 96 ROIs (radius 4 and 6, from 29 scans) we wrap the full PyRadiomics extractor---all 93 first-order, GLCM, GLRLM, GLSZM, GLDM and NGTDM features---in Eq.~\eqref{eq:jk} without modification, and report bias and root-mean-square error (RMSE) in units of the between-region standard deviation of the reference.
+\noindent\textbf{All PyRadiomics features.} On 96 ROIs (radius 4 and 6, from 29 scans) we wrap the unmodified PyRadiomics extractor (93 first-order, GLCM, GLRLM, GLSZM, GLDM, NGTDM features) in Eq.~\eqref{eq:jk}; bias and root-mean-square error (RMSE) are in units of the reference's between-region s.d.
 
 \noindent\textbf{Lung tumours.} For the 66 MSD tumour components (68--338{,}472 voxels, median 6{,}866) we compute all features with and without correction and their Spearman correlation $\rho$ with tumour volume; for the RIDER tumours (radiologist segmentations) we compute test--retest ICC(3,1) per reconstruction.
 
@@ -103,7 +103,7 @@ smooth, 5\,mm & 5.6 & 32\% & $-0.39$ & $-0.31$ & $-0.37$ & 0.63 & 0.60 & 0.62\\
 
 \noindent\textbf{All PyRadiomics features (Fig.~\ref{fig:main}c).} 62 of 93 features are biased by more than $0.2$ reference s.d.\ at radius 4. For smooth first-order and GLCM features the jackknife reduces the median bias from $0.15$ to $0.06$ s.d., lowers the RMSE for 22 of 34 and never raises it by more than 10\%; e.g.\ GLCM MCC $+1.79\to-0.03$ s.d., joint entropy $-0.23\to-0.01$. The remaining large biases of this group come from definitions, not sampling: energy and total energy are extensive, and joint average, sum average and autocorrelation inherit the ROI-minimum anchoring, which shifts the mean grey-level index by $-5.5$ levels at radius 3 and still $-1.7$ at radius 14, whereas a fixed anchor is unbiased (Fig.~\ref{fig:main}d). Quantile features behave as jackknife theory predicts (no gain; RMSE up ${>}10\%$ for 3 of 8), and region-geometry features are only partly corrected (median bias $0.63\to0.48$; 35 of 51 improved, 12 worse).
 
-\noindent\textbf{Lung tumours.} Most tumours are large, so most features change little, and presumably biological volume correlations (mean intensity, skewness) are unaffected. Where the bias is large, it removes the size dependence: the correlation of GLCM Imc1 with volume drops from $\rho=0.65$ to $0.01$, of joint entropy from $0.13$ to $-0.02$, and the number of region-geometry features with $|\rho|>0.3$ from 35 to 22. The correction costs no repeatability: on RIDER tumours, the test--retest ICC of joint entropy is $0.973$ (plug-in) vs.\ $0.974$ (gated), of entropy $0.963$ vs.\ $0.963$ (correlation: $0.89$ vs.\ $0.85$).
+\noindent\textbf{Lung tumours.} Most tumours are large and most features change little; where the bias is large, the correction removes the size dependence: the correlation of GLCM Imc1 with volume drops from $\rho=0.65$ to $0.01$, of joint entropy from $0.13$ to $-0.02$, and the number of region-geometry features with $|\rho|>0.3$ from 35 to 22. The correction costs no repeatability: on RIDER tumours, the test--retest ICC of joint entropy is $0.973$ (plug-in) vs.\ $0.974$ (gated), of entropy $0.963$ vs.\ $0.963$ (correlation: $0.89$ vs.\ $0.85$).
 
 \section{Discussion}
 \label{sec:disc}
@@ -113,7 +113,7 @@ The block jackknife removes the $c/N$ bias of smooth features without tuning, an
 Only public, anonymized datasets were used; no ethical approval was required.
 
 \section{Acknowledgments}
-This work was funded by the Erasmus Mundus Joint Master (EMJM) programme in imaging. The author has no conflicts of interest. The AI assistant Claude (Anthropic) helped write code and text; the author verified all results.
+The author is funded by the Erasmus Mundus Joint Master in Imaging (EMJM in Imaging). Funded by the European Union. Views and opinions expressed are however those of the author only and do not necessarily reflect those of the European Union or the European Education and Culture Executive Agency (EACEA). Neither the European Union nor EACEA can be held responsible for them. The author has no conflicts of interest. The AI assistant Claude (Anthropic) helped write code and text; the author verified all results.
 
 \bibliographystyle{IEEEbib}
 \bibliography{refs}
