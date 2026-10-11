@@ -19,13 +19,13 @@ About 1 s per tumour on RIDER (`rider/bench_radjk.py`).
 | result | command (Python 3.9 venv with pyradiomics for scripts that import it) |
 |---|---|
 | validation vs PyRadiomics | `python validate.py` |
-| synthetic benchmark (Fig. 1a) | `python bench_synth.py 10 2 bench_full.csv` |
-| real CT soft tissue, internal reference (Table 1, Fig. 1b) | `python real_regions.py ../data/msd/Task06_Lung 63 real_full.csv`; smoothed versions: `... 24 smooth_0.7.csv 0.7`, `... 24 smooth_1.4.csv 1.4`, `... 12 smooth_2.0.csv 2.0` |
-| all 93 PyRadiomics features (Fig. 1c) | `python pyrad_wrapper.py ../data/msd/Task06_Lung 40 pyrad_full.csv 8`, then `python analyze_pyrad.py` |
-| regime summary, gated estimator (Table 1, Fig. 1b) | `python analyze_regimes.py` (also writes `real_all_smooth.csv`) |
-| bin anchoring (Fig. 1d) | `python anchoring.py` |
+| synthetic benchmark (Fig. 2a) | `python bench_synth.py 10 2 bench_full.csv` |
+| real CT soft tissue, internal reference (Fig. 2b) | `python real_regions.py ../data/msd/Task06_Lung 63 real_full.csv`; smoothed versions: `... 24 smooth_0.7.csv 0.7`, `... 24 smooth_1.4.csv 1.4`, `... 12 smooth_2.0.csv 2.0` |
+| all 93 PyRadiomics features (Fig. 3) | `python pyrad_wrapper.py ../data/msd/Task06_Lung 40 pyrad_full.csv 8`, then `python analyze_pyrad.py` |
+| regime summary, gated estimator (Results text) | `python analyze_regimes.py` (also writes `real_all_smooth.csv`) |
+| bin anchoring (Results text) | `python anchoring.py` |
 | lung tumours vs volume | `python tumour_volume.py ../data/msd/Task06_Lung tumour_full.csv 8`, then `python analyze_tumour.py` |
-| figure | `python fig2.py` |
+| figures | `python fig_overview.py` (Fig. 1), `python fig2.py` (Figs. 2, 3) |
 
 Early feasibility scripts and trial outputs: `pilots/`.
 

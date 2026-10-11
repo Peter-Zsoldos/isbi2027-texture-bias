@@ -69,39 +69,25 @@ cancels the $c/N$ term for any $c$, because deleting a contiguous block reduces 
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/fig_main.pdf}
-\caption{(a,b) Bias of GLCM joint entropy vs.\ effective sample size $N/\xi^3$ on synthetic textures (a) and real CT soft tissue with an internal reference (b); marker shape: correlation regime. (c) Absolute bias of the 93 PyRadiomics features at radius 4, plug-in vs.\ jackknife. (d) Bias of the mean grey-level index under ROI-minimum and fixed bin anchoring.}
-\label{fig:main}
+\includegraphics[width=\textwidth]{figures/fig_bias.pdf}
+\caption{Bias of GLCM joint entropy vs.\ effective sample size $N/\xi^3$ on synthetic textures (a) and on real CT soft tissue with an internal reference (b). Marker shape: correlation regime; hollow: plug-in, filled: block jackknife.}
+\label{fig:bias}
 \end{figure*}
-
-\begin{table}[t]
-\centering\footnotesize
-\caption{RIDER real reconstructions (kernel, slice thickness; median $\xi$ in voxels), soft tissue with an internal reference: JointEntropy bias and RMSE (bits) over radii 3--8 voxels for plug-in (PI), block jackknife (JK) and gated jackknife (G; applied to the given share of ROIs).}
-\label{tab:real}
-\setlength{\tabcolsep}{2.3pt}
-\begin{tabular}{@{}lcc ccc ccc@{}}
-\toprule
-& & & \multicolumn{3}{c}{bias} & \multicolumn{3}{c}{RMSE}\\
-\cmidrule(lr){4-6}\cmidrule(l){7-9}
-setting & $\xi$ & applied & PI & JK & G & PI & JK & G\\
-\midrule
-sharp, 1.25\,mm & 0.8 & 100\% & $-0.34$ & $+0.03$ & $+0.03$ & 0.46 & 0.19 & 0.19\\
-sharp, 2.5\,mm & 0.8 & 100\% & $-0.33$ & $-0.01$ & $-0.01$ & 0.45 & 0.23 & 0.23\\
-sharp, 5\,mm & 0.8 & 100\% & $-0.35$ & $-0.09$ & $-0.09$ & 0.51 & 0.37 & 0.37\\
-smooth, 1.25\,mm & 1.1 & 98\% & $-0.17$ & $-0.05$ & $-0.05$ & 0.30 & 0.25 & 0.25\\
-smooth, 2.5\,mm & 1.0 & 96\% & $-0.13$ & $-0.03$ & $-0.04$ & 0.33 & 0.31 & 0.30\\
-smooth, 5\,mm & 5.6 & 32\% & $-0.39$ & $-0.31$ & $-0.37$ & 0.63 & 0.60 & 0.62\\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \section{Results}
 \label{sec:results}
-\noindent\textbf{Synthetic textures (Fig.~\ref{fig:main}a).} Plug-in joint entropy is biased by up to $-2.1$ bits and still by $-0.02$ to $-0.14$ bits at $11{,}500$ voxels. The plug-in bias does not depend on $N/\xi^3$ alone, since sparse co-occurrence matrices add a term in the raw $N$. After correction, however, the residual collapses onto one curve: it stays within $\pm0.1$ bits whenever $N/\xi^3\ge20$, for every correlation length. The correction raised the RMSE by more than $0.02$ only for contrast, which is unbiased (up to $+0.13$ at radius 3). Below $N/\xi^3\approx5$ all estimators remain strongly biased, as predicted.
+\noindent\textbf{Synthetic textures (Fig.~\ref{fig:bias}a).} Plug-in joint entropy is biased by up to $-2.1$ bits and still by $-0.02$ to $-0.14$ bits at $11{,}500$ voxels. The plug-in bias does not depend on $N/\xi^3$ alone, since sparse co-occurrence matrices add a term in the raw $N$. After correction, however, the residual collapses onto one curve: it stays within $\pm0.1$ bits whenever $N/\xi^3\ge20$, for every correlation length. The correction raised the RMSE by more than $0.02$ only for contrast, which is unbiased (up to $+0.13$ at radius 3). Below $N/\xi^3\approx5$ all estimators remain strongly biased, as predicted.
 
-\noindent\textbf{Real CT (Fig.~\ref{fig:main}b).} In native soft tissue ($\xi=0.9$), a 123-voxel ROI underestimates joint entropy by $0.63$ bits; the jackknife removes this ($-0.01\pm0.05$, 95\% CI) and halves the RMSE (over all radii: bias $-0.27\to0.00$, RMSE $0.40\to0.23$). Smoother texture follows the criterion: at $\xi=1.6$ the jackknife removes about half of the bias; at $\xi=3.6$ and $6.4$, where most ROIs have $N/\xi^3<20$, it removes little and can even hurt (correlation: RMSE $0.36\to0.52$), which the gate prevents ($0.38$). Part of the residual at $\xi\ge1.6$ persists at large $N/\xi^3$: the reference sphere is itself under-sampled there (synthetic plug-in bias at its size: $-0.02$, $-0.09$, $-0.14$ bits at $\xi=1.5,3,6$, less at native $\xi\approx0.9$), and larger-scale anatomy dominates. The threshold is not critical: any value from 5 to 80 gives the same joint-entropy RMSE reduction (15\%); lower values mainly raise the error of correlation ($+15\%$ at 5 vs.\ $+3\%$ at 20). Real reconstructions confirm both regimes (Table~\ref{tab:real}): with the sharp kernel at every slice thickness and the smooth kernel up to 2.5\,mm ($\xi\le1.1$), the jackknife removes 70--100\% of the joint-entropy bias and cuts the RMSE by up to 59\%; with the smooth kernel at 5\,mm ($\xi=5.6$) the gate is mostly closed, protecting e.g.\ contrast (RMSE $0.61$ instead of $0.72$). Across all 6 reconstructions, gating never raised the RMSE of entropy, energy and uniformity features (${\le}0.1\%$); for nearly unbiased features (correlation, contrast, IDM) it raised it by up to 18\%, 5\% and 6\%.
+\noindent\textbf{Real CT (Fig.~\ref{fig:bias}b).} In native soft tissue ($\xi=0.9$), a 123-voxel ROI underestimates joint entropy by $0.63$ bits; the jackknife removes this ($-0.01\pm0.05$, 95\% CI) and halves the RMSE (over all radii: bias $-0.27\to0.00$, RMSE $0.40\to0.23$). Smoother texture follows the criterion: at $\xi=1.6$ the jackknife removes about half of the bias; at $\xi=3.6$ and $6.4$, where most ROIs have $N/\xi^3<20$, it removes little and can even hurt (correlation: RMSE $0.36\to0.52$), which the gate prevents ($0.38$). Part of the residual at $\xi\ge1.6$ persists at large $N/\xi^3$: the reference sphere is itself under-sampled there (synthetic plug-in bias at its size: $-0.02$, $-0.09$, $-0.14$ bits at $\xi=1.5,3,6$, less at native $\xi\approx0.9$), and larger-scale anatomy dominates. The threshold is not critical: any value from 5 to 80 gives the same joint-entropy RMSE reduction (15\%); lower values mainly raise the error of correlation ($+15\%$ at 5 vs.\ $+3\%$ at 20). Real RIDER reconstructions confirm both regimes: with the sharp kernel at every slice thickness and the smooth kernel up to 2.5\,mm ($\xi\le1.1$; gate open for 96--100\% of ROIs), the jackknife removes 71--97\% of the joint-entropy bias (e.g.\ sharp, 1.25\,mm: $-0.34\to+0.03$ bits) and cuts the RMSE by up to 59\% ($0.46\to0.19$); with the smooth kernel at 5\,mm ($\xi=5.6$) the gate opens for only 32\% of ROIs, protecting e.g.\ contrast (RMSE $0.61$ instead of $0.72$). Across all 6 reconstructions, gating never raised the RMSE of entropy, energy and uniformity features (${\le}0.1\%$); for nearly unbiased features (correlation, contrast, IDM) it raised it by up to 18\%, 5\% and 6\%.
 
-\noindent\textbf{All PyRadiomics features (Fig.~\ref{fig:main}c).} 62 of 93 features are biased by more than $0.2$ reference s.d.\ at radius 4. For smooth first-order and GLCM features the jackknife reduces the median bias from $0.15$ to $0.06$ s.d., lowers the RMSE for 22 of 34 and never raises it by more than 10\%; e.g.\ GLCM MCC $+1.79\to-0.03$ s.d., joint entropy $-0.23\to-0.01$. The remaining large biases of this group come from definitions, not sampling: energy and total energy are extensive, and joint average, sum average and autocorrelation inherit the ROI-minimum anchoring, which shifts the mean grey-level index by $-5.5$ levels at radius 3 and still $-1.7$ at radius 14, whereas a fixed anchor is unbiased (Fig.~\ref{fig:main}d). Quantile features behave as jackknife theory predicts (no gain; RMSE up ${>}10\%$ for 3 of 8), and region-geometry features are only partly corrected (median bias $0.63\to0.48$; 35 of 51 improved, 12 worse).
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_pyrad.pdf}
+\caption{Absolute bias of the 93 PyRadiomics features at radius 4 without (x) and with (y) the block jackknife.}
+\label{fig:pyrad}
+\end{figure}
+
+\noindent\textbf{All PyRadiomics features (Fig.~\ref{fig:pyrad}).} 62 of 93 features are biased by more than $0.2$ reference s.d.\ at radius 4. For smooth first-order and GLCM features the jackknife reduces the median bias from $0.15$ to $0.06$ s.d., lowers the RMSE for 22 of 34 and never raises it by more than 10\%; e.g.\ GLCM MCC $+1.79\to-0.03$ s.d., joint entropy $-0.23\to-0.01$. The remaining large biases of this group come from definitions, not sampling: energy and total energy are extensive, and joint average, sum average and autocorrelation inherit the ROI-minimum anchoring, which shifts the mean grey-level index by $-5.5$ levels at radius 3 and still $-1.7$ at radius 14, whereas a fixed anchor is unbiased at every radius. Quantile features behave as jackknife theory predicts (no gain; RMSE up ${>}10\%$ for 3 of 8), and region-geometry features are only partly corrected (median bias $0.63\to0.48$; 35 of 51 improved, 12 worse).
 
 \noindent\textbf{Lung tumours.} Most tumours are large and most features change little; where the bias is large, the correction removes the size dependence: the correlation of GLCM Imc1 with volume drops from $\rho=0.65$ to $0.01$, of joint entropy from $0.13$ to $-0.02$, and the number of region-geometry features with $|\rho|>0.3$ from 35 to 22. The correction costs no repeatability: on RIDER tumours, the test--retest ICC of joint entropy is $0.973$ (plug-in) vs.\ $0.974$ (gated), of entropy $0.963$ vs.\ $0.963$ (correlation: $0.89$ vs.\ $0.85$).
 
