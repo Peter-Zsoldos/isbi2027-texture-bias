@@ -10,8 +10,9 @@ plt.rcParams.update({'font.size': 7.5, 'font.family': 'serif', 'axes.linewidth':
                      'ytick.major.width': 0.6, 'xtick.major.size': 2.5, 'ytick.major.size': 2.5,
                      'axes.spines.top': False, 'axes.spines.right': False, 'pdf.fonttype': 42, 'legend.fontsize': 6.6,
                      'axes.titlesize': 7.8, 'axes.titleweight': 'bold'})
-BLUE, RED, GREY, VIOLET, SHADE = '#2a78d6', '#e34948', '#7a7974', '#4a3aa7', '#efeee9'
-fig, ax = plt.subplots(2, 2, figsize=(7.1, 3.1), gridspec_kw=dict(wspace=0.24, hspace=0.72))
+BLUE, RED, GREY, VIOLET, SHADE = '#2a78d6', '#e34948', '#7a7974', '#6250d6', '#efeee9'
+AQUA, DYEL = '#199e70', '#c98500'   # feature types in (c): hues not used for methods
+fig, ax = plt.subplots(2, 2, figsize=(7.1, 2.7), gridspec_kw=dict(wspace=0.24, hspace=0.75))
 METH = [('plugin', BLUE, 'plug-in (PyRadiomics)'), ('JK', RED, 'block jackknife (ours)')]
 
 
@@ -49,18 +50,18 @@ for s, mk in zip([0.0, 0.7, 1.4, 2.0], MK):
         g = d.groupby('r').agg(e=('err', 'mean'), n=('neff', 'median'), se=('err', 'sem')).sort_values('n')
         b.errorbar(g.n, g.e, yerr=1.96 * g.se, marker=mk, ms=3, lw=1.0, color=c, mfc='white' if meth == 'plugin' else c,
                    mew=0.9, elinewidth=0.5, capsize=0)
-regime_axes(b, '(b) real CT soft tissue (mean, 95% CI)'); b.set_ylim(-1.0, 0.12)
+regime_axes(b, '(b) real CT soft tissue (mean, 95% CI)'); b.set_ylim(-1.15, 0.12)
 regime_legend(b, ['0.9', '1.6', '3.6', '6.4'], MK)
 
 # (c) all PyRadiomics features: |bias| plug-in vs JK (reference-SD units), r=4
 T = pd.read_csv('pyrad_summary.csv'); t = T[T.r == 4]; c = ax[1, 0]
-for ty, col, mk, lab in [('A', RED, 'o', 'histogram / GLCM (smooth)'), ('B', GREY, 's', 'quantile-based'),
+for ty, col, mk, lab in [('A', AQUA, 'o', 'histogram / GLCM (smooth)'), ('B', DYEL, 's', 'quantile-based'),
                          ('C', VIOLET, '^', 'region geometry')]:
     s = t[t.type.str.startswith(ty)]
     c.scatter(s.bias_p.abs(), s.bias_j.abs(), s=10, color=col, marker=mk, label=lab, lw=0, alpha=0.85)
 lim = [1e-3, 10]; c.plot(lim, lim, color='#999', lw=0.7, ls='--'); c.set_xscale('log'); c.set_yscale('log')
-c.fill_between(lim, [1e-3, 1e-3], lim, color='#e9f4ec', zorder=0, lw=0)
-c.text(0.97, 0.06, 'below diagonal:\njackknife reduces bias', transform=c.transAxes, ha='right', fontsize=6.4, color='#2d7a46')
+c.fill_between(lim, [1e-3, 1e-3], lim, color='#f1f0ec', zorder=0, lw=0)
+c.text(0.97, 0.06, 'below diagonal:\njackknife reduces bias', transform=c.transAxes, ha='right', fontsize=6.4, color='#555')
 c.set_xlim(lim); c.set_ylim(lim); c.set_xlabel('|bias|, plug-in (reference SD)'); c.set_ylabel('|bias|, jackknife')
 c.set_title('(c) all 93 PyRadiomics features, radius 4', loc='left')
 c.legend(loc='upper left', frameon=False, handletextpad=0.2, borderaxespad=0.2, labelspacing=0.2, markerscale=1.2)
