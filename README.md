@@ -1,6 +1,6 @@
 # ISBI 2027 submission 2: "Small regions look homogeneous: finite-sample bias of radiomic texture features and a model-free block-jackknife correction"
 
-Paper source: `paper/main.tex` (build with `latexmk -pdf main.tex`). Data: MSD Task06 lung at `../data/msd/Task06_Lung` (see the paper-1 README for the download).
+Paper source: `paper/main.tex` (build with `latexmk -pdf main.tex`). Data: MSD Task06 lung at `../data/msd/Task06_Lung` and RIDER at `../data/rider` (deleted locally after the results were computed; see the paper-1 README to re-download).
 
 ## Method
 `corrections.py` — `evaluate(f, img, mask, k=2)` wraps **any** feature function `f(img, mask) -> dict` (for example the full PyRadiomics extractor). It returns the plug-in value and the delete-a-block jackknife over k^3 contiguous blocks (k=2: octants; unequal-block formula of Busing et al. 1999). It optionally also returns the split-half estimate.
