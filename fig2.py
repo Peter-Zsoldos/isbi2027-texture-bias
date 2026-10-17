@@ -54,7 +54,7 @@ for s in [0.0, 0.7, 1.4, 2.0]:
         g = d.groupby('r').agg(e=('err', 'mean'), n=('neff', 'median'), se=('err', 'sem')).sort_values('n')
         ct[m].append((g.n, g.e, g.se))
 
-fig, ax = plt.subplots(2, 2, figsize=(7.1, 2.95), sharey='row', gridspec_kw=dict(wspace=0.08, hspace=0.62))
+fig, ax = plt.subplots(2, 2, figsize=(7.1, 2.8), sharey='row', gridspec_kw=dict(wspace=0.08, hspace=0.62))
 panel(ax[0, 0], syn['plugin'], 'plugin', ['1.5', '3', '6'], '(a) synthetic texture: plug-in (PyRadiomics)', (-2.3, 0.35))
 panel(ax[0, 1], syn['JK'], 'JK', ['1.5', '3', '6'], '(b) synthetic texture: block jackknife (ours)', (-2.3, 0.35))
 panel(ax[1, 0], ct['plugin'], 'plugin', ['0.9', '1.6', '3.6', '6.4'],
