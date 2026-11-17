@@ -1,0 +1,13 @@
+{
+ "Entropy": {
+  "median_rel_err": 0.3937674121870033,
+  "n_cells": 8,
+  "pearson": 0.9778632798661551
+ },
+ "Uniformity": {
+  "median_rel_err": 0.28873343822446235,
+  "n_cells": 5,
+  "pearson": 0.9780637379357301
+ },
+ "GO": false
+}

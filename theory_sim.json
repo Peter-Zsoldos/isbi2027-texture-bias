@@ -1,0 +1,11 @@
+{
+ "Entropy": {
+  "median_rel_err": 0.4890704413359782,
+  "n_cells": 12
+ },
+ "Uniformity": {
+  "frac_ok": 1.0,
+  "n_cells": 12
+ },
+ "GO": false
+}
