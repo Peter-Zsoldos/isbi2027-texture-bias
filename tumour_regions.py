@@ -33,7 +33,12 @@ def job(f):
     return rows
 
 if __name__ == '__main__':
-    files = sorted(glob.glob(sys.argv[1] + '/imagesTr/lung_*.nii.gz')); t0 = time.time()
-    with Pool(6) as p: R = p.map(job, files)
-    df = pd.DataFrame([x for rr in R for x in rr]); df['err'] = df.value - df.ref; df.to_csv(sys.argv[2], index=False)
+    import os
+    files = sorted(glob.glob(sys.argv[1] + '/imagesTr/lung_*.nii.gz')); t0 = time.time(); PART = 'tumour_parts'; os.makedirs(PART, exist_ok=True)
+    todo = [f for f in files if not os.path.exists(os.path.join(PART, os.path.basename(f) + '.csv'))]
+    with Pool(2) as p:                                               # 2 workers: each holds one full CT in RAM; per-case files make the run resumable
+        for f, rows in zip(todo, p.imap(job, todo)):
+            pd.DataFrame(rows).to_csv(os.path.join(PART, os.path.basename(f) + '.csv'), index=False); print('done', os.path.basename(f), len(rows), flush=True)
+    parts = [pd.read_csv(os.path.join(PART, os.path.basename(f) + '.csv')) for f in files if os.path.getsize(os.path.join(PART, os.path.basename(f) + '.csv')) > 2]
+    df = pd.concat(parts); df['err'] = df.value - df.ref; df.to_csv(sys.argv[2], index=False)
     print('time', round(time.time() - t0), 'tumour regions', df.groupby(['case', 'comp', 'region']).ngroups, 'xi median %.2f' % df.drop_duplicates(['case', 'comp', 'region']).xi.median())
